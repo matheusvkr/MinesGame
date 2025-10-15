@@ -16,26 +16,30 @@ let currentBet = 0;
 let currentMines = 0;
 let cardsOpened = 0;
 
+let rewardMultiplier = 0.05;
+
 board.style.display = 'none';
 over.style.display = 'none';
 
-function formatCurrency(value) {
-    let number = (value || '').replace(/\D/g, '');
-    if (!number) return '';
-    return number + ',00';
-}
+/* ======== NOVA LÓGICA DO INPUT DE APOSTA ======== */
+// Apaga o valor ao clicar
+betC.addEventListener('focus', (e) => {
+    e.target.value = '';
+});
 
-function randomNumber(qtd, min = 1, max = cardSize) {
-    const numeros = Array.from({ length: max - min + 1 }, (_, i) => i + min);
-    for (let i = numeros.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [numeros[i], numeros[j]] = [numeros[j], numeros[i]];
+betC.addEventListener('focus', (e) => {
+    if (parseFloat(e.target.value) === 0) {
+        e.target.value = '';
     }
-    return numeros.slice(0, qtd);
-}
+});
 
 betC.addEventListener('blur', (e) => {
-    e.target.value = formatCurrency(e.target.value);
+    let value = parseFloat(e.target.value);
+    if (isNaN(value) || value <= 0) {
+        e.target.value = 0;
+    } else {
+        e.target.value = value.toFixed(2);
+    }
 });
 
 button.addEventListener('click', () => {
@@ -46,10 +50,9 @@ button.addEventListener('click', () => {
     }
 });
 
-
 function startGame() {
     const balance = Number(balanceC.innerHTML);
-    const bet = Number((betC.value || '').replaceAll(',', '')) / 100;
+    const bet = parseFloat((betC.value || '0').replace(',', '.'));
     const minesAmount = Number(minesC.value);
     const minBet = 10;
 
@@ -72,13 +75,19 @@ function startGame() {
     }
 }
 
+function randomNumber(qtd, min = 1, max = cardSize) {
+    const numeros = Array.from({ length: max - min + 1 }, (_, i) => i + min);
+    for (let i = numeros.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [numeros[i], numeros[j]] = [numeros[j], numeros[i]];
+    }
+    return numeros.slice(0, qtd);
+}
+
 function updateBoard() {
     const overlay = over;
-
     board.innerHTML = '';
-
     for (let i = 1; i <= cardSize; i++) createCard(i);
-
     board.appendChild(overlay);
 }
 
@@ -108,8 +117,8 @@ function cardClick(id) {
         card.textContent = mineIcon;
         lose();
     } else {
-        const riskMultiplier = 1 + (currentMines / cardSize) * 3;
-        const gain = currentBet * 0.05 * riskMultiplier;
+        const riskMultiplier = Math.pow(1.5, currentMines);
+        const gain = currentBet * rewardMultiplier * riskMultiplier;
         profit += gain;
         cardsOpened += 1;
 
@@ -155,11 +164,12 @@ function cashOut() {
     showOver('🎉 You Won');
 }
 
-
 function showOver(message) {
     over.innerHTML = `<h2>${message}</h2>`;
     over.style.display = 'flex';
 }
+
+
 /*
 Detalhes extra do desenvolvimento
 
