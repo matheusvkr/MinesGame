@@ -56,7 +56,7 @@ function startGame() {
     const minesAmount = Number(minesC.value);
     const minBet = 10;
 
-    if (bet >= minBet && bet <= balance) {
+    if (bet >= minBet && bet <= balance && minesAmount > 0) {
         currentBet = bet;
         currentMines = minesAmount;
         bombs = randomNumber(minesAmount);
@@ -70,8 +70,12 @@ function startGame() {
 
         board.style.display = 'grid';
         console.log('Bombas:', bombs);
+    } else if (bet > balance) {
+        alert('Saldo insuficiente!');
+    } else if (minesAmount < 1) {
+        minesC.value = 1;
     } else {
-        alert('Saldo insuficiente ou valor mínimo não atingido!');
+        alert('[ERROR] Valores inválidos!');
     }
 }
 
