@@ -69,7 +69,7 @@ function startGame() {
         updateBoard();
 
         board.style.display = 'grid';
-        console.log('Bombas:', bombs);
+        //console.log('Bombs:', bombs);
     } else if (bet > balance) {
         alert('Saldo insuficiente!');
     } else if (minesAmount < 1) {
@@ -173,6 +173,31 @@ function showOver(message) {
     over.style.display = 'flex';
 }
 
+function cheat(level = 1) {
+    // function for noobs :)
+    if (level == 2) {
+        balanceC.innerHTML = '9999999999999999999.00';
+        return
+    }
+    const balance = Number(balanceC.innerHTML)
+    const bet = document.querySelector('#aposta')
+
+    bet.value = (balance - 1)
+    minesC.value = 24
+
+    startGame()
+
+    for (let x = 1; x <= cardSize; x++) {
+        if (!bombs.includes(x)) {
+            cardClick(x);
+        }
+    }
+
+    if (gameStarted) {
+        cashOut();
+    }
+}
+
 
 /*
 Detalhes extra do desenvolvimento
@@ -182,7 +207,6 @@ Detalhes extra do desenvolvimento
     - conclusão: 02:12
 
     Uso de IA: Baixo, uso moderado no CSS, nenhum no HTML, baixo no JS, como randomNumber() e correções de bugs (over, formatação etc)
-    - Projeto simples mas acredito que agregou conhecimento
 
     Inspiração: como esperado, cassinos online, especificadamente um jogo estilo campo minado
 
