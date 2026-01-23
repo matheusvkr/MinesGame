@@ -21,8 +21,6 @@ let rewardMultiplier = 0.05;
 board.style.display = 'none';
 over.style.display = 'none';
 
-/* ======== NOVA LÓGICA DO INPUT DE APOSTA ======== */
-// Apaga o valor ao clicar
 betC.addEventListener('focus', (e) => {
     e.target.value = '';
 });
@@ -69,7 +67,6 @@ function startGame() {
         updateBoard();
 
         board.style.display = 'grid';
-        //console.log('Bombs:', bombs);
     } else if (bet > balance) {
         alert('Saldo insuficiente!');
     } else if (minesAmount < 1) {
@@ -174,7 +171,7 @@ function showOver(message) {
 }
 
 function cheat(level = 1) {
-    // function for noobs :)
+    // noob function
     if (level == 2) {
         balanceC.innerHTML = '9999999999999999999.00';
         return
@@ -197,22 +194,3 @@ function cheat(level = 1) {
         cashOut();
     }
 }
-
-
-/*
-Detalhes extra do desenvolvimento
-
-    Tempo de conclusão (Aproximado, e com intervalos):
-    - começo: 18:51
-    - conclusão: 02:12
-
-    Uso de IA: Baixo, uso moderado no CSS, nenhum no HTML, baixo no JS, como randomNumber() e correções de bugs (over, formatação etc)
-
-    Inspiração: como esperado, cassinos online, especificadamente um jogo estilo campo minado
-
-    Projeto para praticar meu aprendizado em JS
-
-    Vou deixar uma demo disponivel no repo
-
-    Desenvolvedor: Matheus Camargo (https://github.com/matheusc9)
-*/
