@@ -161,7 +161,7 @@
         button.textContent = 'Começar';
     };
 
-    /* ================= EVENTS ================= */
+    /* ================= EVENTS =================  */
     button.addEventListener('click', () => {
         _state.started ? cashOut() : startGame();
     });
