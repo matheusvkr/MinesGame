@@ -4,7 +4,7 @@
 
 A fun and interactive **Mines Game** where luck, strategy, and risk meet! Click cards to reveal gems while avoiding hidden bombs. The more gems you uncover, the higher your potential reward — but hit a bomb, and you lose your bet.
 
-**Live demo:** [Click here](https://mines-game-beta.vercel.app/)
+**Live demo:** [Click here]([https://mines-game-beta.vercel.app/](https://matheusc9.github.io/MinesGame/))
 
 ---
 
