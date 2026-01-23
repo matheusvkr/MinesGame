@@ -1,196 +1,169 @@
-const betC = document.querySelector('#aposta');
-const minesC = document.querySelector('#qtdminas');
-const button = document.querySelector('#startBtn');
-const balanceC = document.querySelector('#saldo');
-const board = document.querySelector('#board');
-const over = document.querySelector('#over');
+(() => {
+    'use strict';
 
-const cardSize = 25;
-const mineIcon = '💣';
-const gemIcon = '💎';
+    /* ================= CONFIG ================= */
+    const CARD_SIZE = 25;
+    const MIN_BET = 10;
+    const MINE_ICON = '💣';
+    const GEM_ICON = '💎';
+    const BASE_MULTIPLIER = 0.05;
 
-let bombs = [];
-let gameStarted = false;
-let profit = 0;
-let currentBet = 0;
-let currentMines = 0;
-let cardsOpened = 0;
+    /* ================= DOM ================= */
+    const betC = document.querySelector('#aposta');
+    const minesC = document.querySelector('#qtdminas');
+    const button = document.querySelector('#startBtn');
+    const balanceC = document.querySelector('#saldo');
+    const board = document.querySelector('#board');
+    const over = document.querySelector('#over');
 
-let rewardMultiplier = 0.05;
+    /* ================= PRIVATE STATE ================= */
+    let _state = Object.seal({
+        started: false,
+        bet: 0,
+        mines: 0,
+        profit: 0,
+        opened: 0,
+        bombsHash: null
+    });
 
-board.style.display = 'none';
-over.style.display = 'none';
+    /* ================= HELPERS ================= */
+    const secureRandom = (min, max) =>
+        crypto.getRandomValues(new Uint32Array(1))[0] % (max - min + 1) + min;
 
-betC.addEventListener('focus', (e) => {
-    e.target.value = '';
-});
+    const shuffle = arr => {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = secureRandom(0, i);
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    };
 
-betC.addEventListener('focus', (e) => {
-    if (parseFloat(e.target.value) === 0) {
-        e.target.value = '';
-    }
-});
+    const hashBombs = bombs =>
+        btoa(bombs.join('-') + Date.now()).slice(0, 32);
 
-betC.addEventListener('blur', (e) => {
-    let value = parseFloat(e.target.value);
-    if (isNaN(value) || value <= 0) {
-        e.target.value = 0;
-    } else {
-        e.target.value = value.toFixed(2);
-    }
-});
+    const parseBalance = () => Number(balanceC.textContent) || 0;
 
-button.addEventListener('click', () => {
-    if (gameStarted) {
-        cashOut();
-    } else {
-        startGame();
-    }
-});
+    const updateBalance = value => {
+        balanceC.textContent = value.toFixed(2);
+    };
 
-function startGame() {
-    const balance = Number(balanceC.innerHTML);
-    const bet = parseFloat((betC.value || '0').replace(',', '.'));
-    const minesAmount = Number(minesC.value);
-    const minBet = 10;
+    const cheatDetected = () => {
+        alert('🚨 Cheat detectado!');
+        location.reload();
+    };
 
-    if (bet >= minBet && bet <= balance && minesAmount > 0) {
-        currentBet = bet;
-        currentMines = minesAmount;
-        bombs = randomNumber(minesAmount);
+    /* ================= GAME LOGIC ================= */
+    const generateBombs = qtd => {
+        const nums = shuffle([...Array(CARD_SIZE)].map((_, i) => i + 1));
+        const bombs = nums.slice(0, qtd);
+        _state.bombsHash = hashBombs(bombs);
+        return bombs;
+    };
 
-        profit = 0;
-        cardsOpened = 0;
-        gameStarted = true;
+    let _bombs = [];
+
+    const startGame = () => {
+        if (_state.started) return;
+
+        const bet = Number(betC.value);
+        const mines = Number(minesC.value);
+        const balance = parseBalance();
+
+        if (bet < MIN_BET || bet > balance || mines < 1) return;
+
+        _state.started = true;
+        _state.bet = bet;
+        _state.mines = mines;
+        _state.profit = 0;
+        _state.opened = 0;
+
+        _bombs = generateBombs(mines);
+
         button.textContent = 'Retirar';
         over.style.display = 'none';
-        updateBoard();
+        renderBoard();
+    };
 
+    const lose = () => {
+        if (!_state.started) cheatDetected();
+
+        _state.started = false;
+        updateBalance(parseBalance() - _state.bet);
+        revealBombs();
+        showOver('❌ You Lose');
+        resetButton();
+    };
+
+    const cashOut = () => {
+        if (_state.opened === 0) alert("No card was opened!");
+        if (!_state.started) cheatDetected();
+
+        updateBalance(parseBalance() + _state.profit);
+        _state.started = false;
+        showOver('🎉 You Won');
+        resetButton();
+    };
+
+    const cardClick = id => {
+        if (!_state.started) return;
+
+        if (_bombs.includes(id)) {
+            lose();
+            return;
+        }
+
+        _state.opened++;
+        const risk = Math.pow(1.45, _state.mines);
+        _state.profit += _state.bet * BASE_MULTIPLIER * risk;
+
+        button.textContent = `Retirar R$${_state.profit.toFixed(2)}`;
+    };
+
+    /* ================= UI ================= */
+    const renderBoard = () => {
+        board.innerHTML = '';
+        for (let i = 1; i <= CARD_SIZE; i++) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.textContent = GEM_ICON;
+            card.style.color = 'transparent';
+
+            card.addEventListener('click', () => {
+                if (card.dataset.opened) return;
+                card.dataset.opened = '1';
+                card.style.color = 'white';
+                cardClick(i);
+            });
+
+            board.appendChild(card);
+        }
+        board.appendChild(over);
         board.style.display = 'grid';
-    } else if (bet > balance) {
-        alert('Saldo insuficiente!');
-    } else if (minesAmount < 1) {
-        minesC.value = 1;
-    } else {
-        alert('[ERROR] Valores inválidos!');
-    }
-}
+    };
 
-function randomNumber(qtd, min = 1, max = cardSize) {
-    const numeros = Array.from({ length: max - min + 1 }, (_, i) => i + min);
-    for (let i = numeros.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [numeros[i], numeros[j]] = [numeros[j], numeros[i]];
-    }
-    return numeros.slice(0, qtd);
-}
+    const revealBombs = () => {
+        _bombs.forEach(id => {
+            const c = document.querySelector(`.card:nth-child(${id})`);
+            if (c) {
+                c.textContent = MINE_ICON;
+                c.style.color = 'white';
+                c.style.background = '#ff4d4d';
+            }
+        });
+    };
 
-function updateBoard() {
-    const overlay = over;
-    board.innerHTML = '';
-    for (let i = 1; i <= cardSize; i++) createCard(i);
-    board.appendChild(overlay);
-}
+    const showOver = msg => {
+        over.innerHTML = `<h2>${msg}</h2>`;
+        over.style.display = 'flex';
+    };
 
-function createCard(id) {
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.id = id;
-    card.textContent = gemIcon;
-    card.style.color = 'transparent';
-    card.dataset.revealed = 'false';
+    const resetButton = () => {
+        button.textContent = 'Começar';
+    };
 
-    card.addEventListener('click', () => {
-        if (gameStarted) cardClick(id);
+    /* ================= EVENTS ================= */
+    button.addEventListener('click', () => {
+        _state.started ? cashOut() : startGame();
     });
 
-    board.appendChild(card);
-}
-
-function cardClick(id) {
-    const card = document.getElementById(String(id));
-    if (!card || card.dataset.revealed === 'true') return;
-
-    card.dataset.revealed = 'true';
-    card.style.color = 'white';
-
-    if (bombs.includes(Number(id))) {
-        card.textContent = mineIcon;
-        lose();
-    } else {
-        const riskMultiplier = Math.pow(1.5, currentMines);
-        const gain = currentBet * rewardMultiplier * riskMultiplier;
-        profit += gain;
-        cardsOpened += 1;
-
-        card.textContent = gemIcon;
-
-        button.textContent = `Retirar R$${profit.toFixed(2).replace('.', ',')}`;
-    }
-}
-
-function lose() {
-    gameStarted = false;
-
-    const balance = Number(balanceC.innerHTML);
-    balanceC.innerHTML = (balance - currentBet).toFixed(2);
-
-    profit = 0;
-    button.textContent = 'Recomeçar';
-
-    showOver('❌ You Lose');
-
-    bombs.forEach(id => {
-        const card = document.getElementById(String(id));
-        if (card) {
-            card.textContent = mineIcon;
-            card.style.color = 'white';
-            card.style.background = '#ff4d4d';
-        }
-    });
-}
-
-function cashOut() {
-    if (cardsOpened === 0) {
-        alert('Você ainda não acertou nenhum card!');
-        return;
-    }
-
-    const balance = Number(balanceC.innerHTML);
-    balanceC.innerHTML = (balance + profit).toFixed(2);
-
-    profit = 0;
-    gameStarted = false;
-    button.textContent = 'Começar';
-    showOver('🎉 You Won');
-}
-
-function showOver(message) {
-    over.innerHTML = `<h2>${message}</h2>`;
-    over.style.display = 'flex';
-}
-
-function cheat(level = 1) {
-    // noob function
-    if (level == 2) {
-        balanceC.innerHTML = '9999999999999999999.00';
-        return
-    }
-    const balance = Number(balanceC.innerHTML)
-    const bet = document.querySelector('#aposta')
-
-    bet.value = (balance - 1)
-    minesC.value = 24
-
-    startGame()
-
-    for (let x = 1; x <= cardSize; x++) {
-        if (!bombs.includes(x)) {
-            cardClick(x);
-        }
-    }
-
-    if (gameStarted) {
-        cashOut();
-    }
-}
+})();
