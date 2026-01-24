@@ -95,7 +95,10 @@
     };
 
     const cashOut = () => {
-        if (_state.opened === 0) alert("No card was opened!");
+        if (_state.opened === 0) {
+            alert("No card was opened!");
+            return;
+        }
         if (!_state.started) cheatDetected();
 
         updateBalance(parseBalance() + _state.profit);
