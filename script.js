@@ -1,6 +1,11 @@
 (() => {
     'use strict';
 
+    /* ================= HARDENING ================= */
+    Object.freeze(Math);
+    Object.freeze(Array.prototype);
+    Object.freeze(Object);
+
     /* ================= CONFIG ================= */
     const CARD_SIZE = 25;
     const MIN_BET = 10;
@@ -17,7 +22,9 @@
     const over = document.querySelector('#over');
 
     /* ================= PRIVATE STATE ================= */
-    let _state = Object.seal({
+    let _balance = 1000;
+
+    const _state = Object.seal({
         started: false,
         bet: 0,
         mines: 0,
@@ -39,20 +46,39 @@
     };
 
     const hashBombs = bombs =>
-        btoa(bombs.join('-') + Date.now()).slice(0, 32);
+        btoa(bombs.join('-') + performance.now()).slice(0, 32);
 
-    const parseBalance = () => Number(balanceC.textContent) || 0;
+    const getBalance = () => _balance;
 
-    const updateBalance = value => {
-        balanceC.textContent = value.toFixed(2);
+    const setBalance = value => {
+        _balance = Math.max(0, Number(value.toFixed(2)));
+        balanceC.textContent = _balance.toFixed(2);
     };
 
     const cheatDetected = () => {
-        alert('🚨 Cheat detectado!');
-        location.reload();
+        document.body.innerHTML = `
+            <h1 style="color:red;text-align:center;margin-top:40px">
+                🚨 Cheat detectado
+            </h1>`;
+        throw new Error('Cheat detected');
     };
 
+    /* ================= ANTI DOM TAMPERING ================= */
+    const observer = new MutationObserver(() => {
+        if (Number(balanceC.textContent) !== _balance) {
+            cheatDetected();
+        }
+    });
+
+    observer.observe(balanceC, {
+        childList: true,
+        characterData: true,
+        subtree: true
+    });
+
     /* ================= GAME LOGIC ================= */
+    let _bombs = [];
+
     const generateBombs = qtd => {
         const nums = shuffle([...Array(CARD_SIZE)].map((_, i) => i + 1));
         const bombs = nums.slice(0, qtd);
@@ -60,16 +86,18 @@
         return bombs;
     };
 
-    let _bombs = [];
-
     const startGame = () => {
         if (_state.started) return;
 
         const bet = Number(betC.value);
         const mines = Number(minesC.value);
-        const balance = parseBalance();
 
-        if (bet < MIN_BET || bet > balance || mines < 1) return;
+        if (
+            bet < MIN_BET ||
+            bet > getBalance() ||
+            mines < 1 ||
+            mines >= CARD_SIZE
+        ) return;
 
         _state.started = true;
         _state.bet = bet;
@@ -88,20 +116,17 @@
         if (!_state.started) cheatDetected();
 
         _state.started = false;
-        updateBalance(parseBalance() - _state.bet);
+        setBalance(getBalance() - _state.bet);
         revealBombs();
         showOver('❌ You Lose');
         resetButton();
     };
 
     const cashOut = () => {
-        if (_state.opened === 0) {
-            alert("No card was opened!");
-            return;
-        }
         if (!_state.started) cheatDetected();
+        if (_state.opened === 0) return;
 
-        updateBalance(parseBalance() + _state.profit);
+        setBalance(getBalance() + _state.profit);
         _state.started = false;
         showOver('🎉 You Won');
         resetButton();
@@ -164,9 +189,12 @@
         button.textContent = 'Começar';
     };
 
-    /* ================= EVENTS =================  */
+    /* ================= EVENTS ================= */
     button.addEventListener('click', () => {
         _state.started ? cashOut() : startGame();
     });
+
+    /* ================= INIT ================= */
+    setBalance(_balance);
 
 })();
