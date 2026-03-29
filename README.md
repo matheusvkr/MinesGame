@@ -4,11 +4,11 @@
 
 A fun and interactive **Mines Game** where luck, strategy, and risk meet! Click cards to reveal gems while avoiding hidden bombs. The more gems you uncover, the higher your potential reward — but hit a bomb, and you lose your bet.
 
-**Live demo:** [Click here](https://matheusc9.github.io/MinesGame/)
+**Live demo:** [Click here](https://matheusvkr.github.io/MinesGame/)
 
 ---
 
-## 🎮 Features
+## Features
 
 - 5x5 card grid with hidden bombs  
 - Adjustable number of bombs (mines) for customizable difficulty  
@@ -21,7 +21,7 @@ A fun and interactive **Mines Game** where luck, strategy, and risk meet! Click 
 
 ---
 
-## 🛠️ Built With
+## Built With
 
 - HTML5  
 - CSS3  
@@ -31,7 +31,7 @@ No frameworks — fully frontend game.
 
 ---
 
-## 🎲 How to Play
+## How to Play
 
 1. Enter your bet amount.  
 2. Select the number of bombs on the board.  
@@ -48,5 +48,5 @@ No frameworks — fully frontend game.
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/matheusc9/MinesGame.git
+git clone https://github.com/matheusvkr/MinesGame.git
 cd MinesGame
